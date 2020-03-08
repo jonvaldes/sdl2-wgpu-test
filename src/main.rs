@@ -261,7 +261,8 @@ fn main() {
             pass.set_index_buffer(&index_buf, 0);
             pass.set_vertex_buffers(0, &[(&vertex_buf, 0)]);
 
-
+            // Ideally dynamically fill instance_buf with some random data here as a test. Not sure
+            // how to dynamically fill or resize a buffer...
 
             pass.set_vertex_buffers(1, &[(&instance_buf, 0)]);
             pass.draw_indexed(0 .. 6, 0, 0 .. 6);
