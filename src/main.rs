@@ -1,4 +1,4 @@
-use std::{mem, ops::Range, rc::Rc};
+use std::mem;
 use zerocopy::{AsBytes, FromBytes};
 
 use sdl2::{
@@ -10,7 +10,6 @@ use sdl2::{
 };
 
 use wgpu::*;
-use wgpu::vertex_attr_array;
 
 // use wgpu_glyph::{Section, GlyphBrushBuilder, Scale};
 
@@ -23,24 +22,10 @@ struct Uniforms {
 
 #[repr(C)]
 #[derive(Clone, Copy, AsBytes, FromBytes)]
-struct Vertex {
-    vertex_position: [f32; 2]
-}
-
-impl Vertex {
-    pub fn new(x: f32, y: f32) -> Vertex {
-        Vertex {
-            vertex_position: [x, y]
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, AsBytes, FromBytes)]
 struct Instance {
     position: [f32; 2],
     dimensions: [f32; 2],
-    color: [f32; 3]
+    color: [f32; 4]
 }
 
 impl Instance {
@@ -48,7 +33,7 @@ impl Instance {
         Instance {
             position: [x, y],
             dimensions: [width, height],
-            color: [r, g, b]
+            color: [r, g, b, 1.0]
         }
     }
 }
@@ -83,24 +68,12 @@ fn main() {
         },
         BackendBit::PRIMARY).unwrap();
 
-    let (device, mut queue) = adapter.request_device(&DeviceDescriptor {
+    let (device, queue) = adapter.request_device(&DeviceDescriptor {
         extensions: Extensions {
             anisotropic_filtering: false
         },
         limits: Limits::default()
     });
-
-    // Static Data
-    let vertex_buffer_data = [
-        Vertex::new(0.0, 0.0), // Top Left
-        Vertex::new(1.0, 0.0), // Top Right
-        Vertex::new(1.0, 1.0), // Bottom Right
-        Vertex::new(0.0, 1.0) // Bottom Left
-    ];
-    let vertex_buf = device.create_buffer_with_data(vertex_buffer_data.as_bytes(), BufferUsage::VERTEX);
-
-    let index_buffer_data: &[u16] = &[0, 1, 2, 0, 2, 3];
-    let index_buf = device.create_buffer_with_data(index_buffer_data.as_bytes(), BufferUsage::INDEX);
 
     // Dynamic Per Instance Data
     /*_________
@@ -117,7 +90,9 @@ fn main() {
         Instance::new(6.0, 2.0, 1.0, 1.0, 0.0, 0.0, 1.0),
         Instance::new(5.0, 3.0, 3.0, 1.0, 1.0, 0.0, 1.0)
     ];
-    let instance_buf = device.create_buffer_with_data(instance_buffer_data.as_bytes(), BufferUsage::VERTEX);
+    let instance_buf = device.create_buffer_with_data(instance_buffer_data.as_bytes(), BufferUsage::UNIFORM);
+
+    let instance_size = (mem::size_of::<Instance>() * instance_buffer_data.len()) as BufferAddress;
 
     // Dynamic Per Frame Data
     let uniforms = Uniforms {
@@ -136,6 +111,11 @@ fn main() {
                 binding: 0,
                 visibility: wgpu::ShaderStage::VERTEX,
                 ty: BindingType::UniformBuffer { dynamic: false }
+            },
+            BindGroupLayoutBinding {
+                binding: 1,
+                visibility: wgpu::ShaderStage::VERTEX,
+                ty: BindingType::UniformBuffer { dynamic: false }
             }
         ]
     });
@@ -151,17 +131,24 @@ fn main() {
                     buffer: &uniform_buf,
                     range: 0 .. uniform_size
                 }
-            }
+            },
+            Binding {
+                binding: 1,
+                resource: BindingResource::Buffer {
+                    buffer: &instance_buf,
+                    range: 0 .. instance_size
+                }
+            }, 
         ]
     });
 
-    let vs = include_bytes!("shader.vert.spv");
-    let vs_module =
-        device.create_shader_module(&read_spirv(std::io::Cursor::new(&vs[..])).unwrap());
+    let vs = include_str!("shader.vert.glsl");
+    let vs_spirv = read_spirv(glsl_to_spirv::compile(&vs, glsl_to_spirv::ShaderType::Vertex).unwrap()).unwrap();
+    let vs_module = device.create_shader_module(&vs_spirv);
 
-    let fs = include_bytes!("shader.frag.spv");
-    let fs_module =
-        device.create_shader_module(&read_spirv(std::io::Cursor::new(&fs[..])).unwrap());
+    let fs = include_str!("shader.frag.glsl");
+    let fs_spirv = read_spirv(glsl_to_spirv::compile(&fs, glsl_to_spirv::ShaderType::Fragment).unwrap()).unwrap();
+    let fs_module = device.create_shader_module(&fs_spirv);
 
     let render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
         layout: &pipeline_layout,
@@ -189,24 +176,7 @@ fn main() {
         }],
         depth_stencil_state: None,
         index_format: IndexFormat::Uint16,
-        vertex_buffers: &[
-            VertexBufferDescriptor {
-                stride: mem::size_of::<Vertex>() as BufferAddress,
-                step_mode: InputStepMode::Vertex,
-                attributes: &vertex_attr_array![
-                    0 => Float2 // Vertex Position
-                ]
-            },
-            VertexBufferDescriptor {
-                stride: mem::size_of::<Instance>() as BufferAddress,
-                step_mode: InputStepMode::Instance,
-                attributes: &vertex_attr_array![
-                    1 => Float2, // Top Left Position
-                    2 => Float2, // Dimensions
-                    3 => Float3  // Color
-                ]
-            },
-        ],
+        vertex_buffers: &[],
         sample_count: 1,
         sample_mask: !0,
         alpha_to_coverage_enabled: false,
@@ -258,14 +228,11 @@ fn main() {
             });
             pass.set_pipeline(&render_pipeline);
             pass.set_bind_group(0, &bind_group, &[]);
-            pass.set_index_buffer(&index_buf, 0);
-            pass.set_vertex_buffers(0, &[(&vertex_buf, 0)]);
 
             // Ideally dynamically fill instance_buf with some random data here as a test. Not sure
             // how to dynamically fill or resize a buffer...
 
-            pass.set_vertex_buffers(1, &[(&instance_buf, 0)]);
-            pass.draw_indexed(0 .. 6, 0, 0 .. 6);
+            pass.draw(0 .. 6*6, 0..1);
         }
 
         let (width, height) = window.drawable_size();

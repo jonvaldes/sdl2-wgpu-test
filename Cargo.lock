@@ -25,6 +25,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayref"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4c527152e37cf757a3f78aae5a06fbeefdb07ccc535c980a3208ee3060dd544"
+
+[[package]]
 name = "arrayvec"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -64,10 +70,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
+name = "block-buffer"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a076c298b9ecdb530ed9d967e74a6027d6a7478924520acddcddc24c1c8ab3ab"
+dependencies = [
+ "arrayref",
+ "byte-tools",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f359dc14ff8911330a51ef78022d376f25ed00248912803b58f00cb1c27f742"
+
+[[package]]
+name = "byte-tools"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "560c32574a12a89ecd91f5e742165893f86e3ab98d21f8ea548658eb9eef5f40"
 
 [[package]]
 name = "byteorder"
@@ -227,6 +249,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "digest"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03b072242a8cbaf9c145665af9d250c59af3b958f83ed6824e13533cf76d5b90"
+dependencies = [
+ "generic-array",
+]
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -243,6 +274,12 @@ checksum = "3f852d320142e1cceb15dccef32ed72a9970b83109d8a4e24b1ab04d579f485d"
 dependencies = [
  "num-traits",
 ]
+
+[[package]]
+name = "fake-simd"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "filetime"
@@ -290,6 +327,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c"
 dependencies = [
  "byteorder",
+]
+
+[[package]]
+name = "generic-array"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef25c5683767570c2bbd7deba372926a55eaae9982d7726ee2a1050239d45b9d"
+dependencies = [
+ "typenum",
 ]
 
 [[package]]
@@ -418,6 +464,17 @@ dependencies = [
  "bitflags",
  "raw-window-handle",
  "smallvec 0.6.13",
+]
+
+[[package]]
+name = "glsl-to-spirv"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28caebc98746d507603a2d3df66dcbe04e41d4febad0320f3eec1ef72b6bbef1"
+dependencies = [
+ "cmake",
+ "sha2",
+ "tempfile",
 ]
 
 [[package]]
@@ -853,6 +910,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "remove_dir_all"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a83fa3702a688b9359eccba92d153ac33fd2e8462f9e0e3fdf155239ea7792e"
+dependencies = [
+ "winapi",
+]
+
+[[package]]
 name = "rendy-descriptor"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -946,6 +1012,7 @@ dependencies = [
 name = "sdl2-wgpu-lyon"
 version = "0.1.0"
 dependencies = [
+ "glsl-to-spirv",
  "lyon",
  "sdl2",
  "wgpu 0.4.0 (git+https://github.com/gfx-rs/wgpu-rs)",
@@ -967,6 +1034,18 @@ name = "semver-parser"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
+
+[[package]]
+name = "sha2"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9eb6be24e4c23a84d7184280d2722f7f2731fcdd4a9d886efbfe4413e4847ea0"
+dependencies = [
+ "block-buffer",
+ "byte-tools",
+ "digest",
+ "fake-simd",
+]
 
 [[package]]
 name = "shared_library"
@@ -1084,6 +1163,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "tempfile"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a6e24d9338a0a5be79593e2fa15a648add6138caa803e2d5bc782c371732ca9"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "rand",
+ "redox_syscall",
+ "remove_dir_all",
+ "winapi",
+]
+
+[[package]]
 name = "thread_local"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1100,6 +1193,12 @@ checksum = "3bfd5b7557925ce778ff9b9ef90e3ade34c524b5ff10e239c69a42d546d2af56"
 dependencies = [
  "rand",
 ]
+
+[[package]]
+name = "typenum"
+version = "1.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d2783fe2d6b8c1101136184eb41be8b1ad379e4657050b8aaff0c79ee7575f9"
 
 [[package]]
 name = "unicode-xid"
